@@ -1,44 +1,131 @@
 if (typeof AFRAME === 'undefined') {
-  throw new Error('Component attempted to register before AFRAME was available.');
+  throw new Error('Controls attempted to register before AFRAME was available.');
 }
 
-/**
- * Example component for A-Frame.
- */
-AFRAME.registerComponent('example', {
-  schema: { },
+// Tiny KeyboardEvent.code polyfill.
+var KEYCODE_TO_CODE = {
+  '37': 'ArrowLeft',
+  '39': 'ArrowRight',
+  '65': 'KeyA',
+  '68': 'KeyD'
+};
+
+var DPAD_LEFT = 14;
+var DPAD_RIGHT = 15;
+var KEY_LEFT = 65;
+var KEY_RIGHT = 68;
+
+AFRAME.registerControls('comfort-turn-gamepad-controls', {
+  schema: {
+    degrees: {default: 30},
+    enabled: {default: true},
+    controller: {default: 1, oneOf: [1, 2, 3, 4]}
+  },
 
   /**
-   * Called once when component is attached. Generally for initial setup.
+   * Init handler. Called during scene initialization and is only run once.
+   * Controls can use this to set initial state.
    */
-  init: function () { },
+  init: function () {
+    this.angle = undefined;
+    this.gamepad = null;
+  },
 
   /**
-   * Called when component is attached and when component data changes.
-   * Generally modifies the entity based on the data.
+   * Update handler.
+   * Called whenever component's data changes.
+   * Also called on component initialization when the component receives initial data.
    */
-  update: function (oldData) { },
+  update: function () {
+    this.angle = THREE.Math.degToRad(this.data.degrees);
+    this.gamepad = navigator.getGamepads && navigator.getGamepads()[this.data.num - 1];
+  },
 
   /**
-   * Called when a component is removed (e.g., via removeAttribute).
-   * Generally undoes all modifications to the entity.
+   * Returns true if the control is actively in use.
+   * @type {boolean}
    */
-  remove: function () { },
+  isRotationActive: function () {
+    if (!this.data.enabled || !this.gamepad || !this.gamepad.connected) { return false; }
+    return gamepad.buttons[DPAD_LEFT].pressed || gamepad.buttons[DPAD_RIGHT].pressed;
+  },
 
   /**
-   * Called on each scene tick.
+   * Returns an incremental THREE.Vector2 rotation change, with X and Y rotation values.
+   * To be calibrated, values should be on the range [-1,1].
+   * @returns {THREE.Vector2}
    */
-  // tick: function (t) { },
+  getRotationDelta: function () {
+    if (gamepad.buttons[DPAD_LEFT].pressed) {
+      return new Vector2(0, -1 * this.angle);
+    } else if (gamepad.buttons[DPAD_RIGHT].pressed) {
+      return new Vector2(0, this.angle);
+    }
+  }
+});
+
+AFRAME.registerControls('comfort-turn-keyboard-controls', {
+  schema: {
+    degrees: {default: 30},
+    enabled: {default: true}
+  },
 
   /**
-   * Called when entity pauses.
-   * Use to stop or remove any dynamic or background behavior such as events.
+   * Init handler. Called during scene initialization and is only run once.
+   * Controls can use this to set initial state.
    */
-  pause: function () { },
+  init: function () {
+    this.angle = undefined;
+    this.keysPressed = {};
+    this.onKeyDown = this.onKeyDown.bind(this);
+    this.onKeyUp = this.onKeyUp.bind(this);
+    window.addEventListener('keydown', this.onKeyDown);
+    window.addEventListener('keyup', this.onKeyUp);
+  },
 
   /**
-   * Called when entity resumes.
-   * Use to continue or add any dynamic or background behavior such as events.
+   * Update handler.
+   * Called whenever component's data changes.
+   * Also called on component initialization when the component receives initial data.
    */
-  play: function () { },
+  update: function () {
+    this.angle = THREE.Math.degToRad(this.data.degrees);
+  },
+
+  remove: function () {
+    window.removeEventListener('keydown', this.onKeyDown);
+    window.removeEventListener('keyup', this.onKeyUp);
+  },
+
+  onKeyDown: function (event) {
+    this.keysPressed[event.keyCode] = true;
+  },
+
+  onKeyUp: function (event) {
+    delete this.keysPressed[event.keyCode];
+  },
+
+  /**
+   * Returns true if the control is actively in use.
+   * @type {boolean}
+   */
+  isRotationActive: function () {
+    var keysPressed = this.keysPressed;
+    if (!this.data.enabled) { return false; }
+    return keysPressed[KEY_LEFT] || keysPressed[KEY_RIGHT];
+  },
+
+  /**
+   * Returns an incremental THREE.Vector2 rotation change, with X and Y rotation values.
+   * To be calibrated, values should be on the range [-1,1].
+   * @returns {THREE.Vector2}
+   */
+  getRotationDelta: function () {
+    var keysPressed = this.keysPressed;
+    if (keysPressed[KEY_LEFT]) {
+      return new Vector2(0, -1 * this.angle);
+    } else if (keysPressed[KEY_RIGHT]) {
+      return new Vector2(0, this.angle);
+    }
+  }
 });
