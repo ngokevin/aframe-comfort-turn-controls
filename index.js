@@ -12,8 +12,8 @@ var KEYCODE_TO_CODE = {
 
 var DPAD_LEFT = 14;
 var DPAD_RIGHT = 15;
-var KEY_LEFT = 65;
-var KEY_RIGHT = 68;
+var KEY_LEFT = 37;
+var KEY_RIGHT = 39;
 
 AFRAME.registerControls('comfort-turn-gamepad-controls', {
   schema: {
@@ -29,6 +29,7 @@ AFRAME.registerControls('comfort-turn-gamepad-controls', {
   init: function () {
     this.angle = undefined;
     this.gamepad = null;
+    this.rotation = this.el.getComputedAttribute('rotation');
   },
 
   /**
@@ -57,9 +58,9 @@ AFRAME.registerControls('comfort-turn-gamepad-controls', {
    */
   getRotationDelta: function () {
     if (gamepad.buttons[DPAD_LEFT].pressed) {
-      return new Vector2(0, -1 * this.angle);
+      return new THREE.Vector2(0, -1 * this.angle);
     } else if (gamepad.buttons[DPAD_RIGHT].pressed) {
-      return new Vector2(0, this.angle);
+      return new THREE.Vector2(0, this.angle);
     }
   }
 });
@@ -98,7 +99,14 @@ AFRAME.registerControls('comfort-turn-keyboard-controls', {
   },
 
   onKeyDown: function (event) {
+    var rotation = this.el.getComputedAttribute('rotation');
     this.keysPressed[event.keyCode] = true;
+    if (this.keysPressed[KEY_LEFT]) {
+      rotation.y += this.data.degrees;
+    } else if (this.keysPressed[KEY_RIGHT]) {
+      rotation.y -= this.data.degrees;
+    }
+    this.rotation = rotation;
   },
 
   onKeyUp: function (event) {
@@ -115,17 +123,7 @@ AFRAME.registerControls('comfort-turn-keyboard-controls', {
     return keysPressed[KEY_LEFT] || keysPressed[KEY_RIGHT];
   },
 
-  /**
-   * Returns an incremental THREE.Vector2 rotation change, with X and Y rotation values.
-   * To be calibrated, values should be on the range [-1,1].
-   * @returns {THREE.Vector2}
-   */
-  getRotationDelta: function () {
-    var keysPressed = this.keysPressed;
-    if (keysPressed[KEY_LEFT]) {
-      return new Vector2(0, -1 * this.angle);
-    } else if (keysPressed[KEY_RIGHT]) {
-      return new Vector2(0, this.angle);
-    }
+  getRotation: function () {
+    return this.rotation;
   }
 });

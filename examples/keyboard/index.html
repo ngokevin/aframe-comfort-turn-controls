@@ -1,15 +1,30 @@
 <html>
   <head>
     <title>A-Frame Comfort Turn Component - Keyboard</title>
+    <script src="http://localhost:9000/dist/aframe.js"></script>
     <script src="../build.js"></script>
   </head>
   <body>
-    <a-scene>
+    <a-scene antialias="true">
+      <a-assets>
+        <a-mixin id="box" geometry="primitive: box" material="color: #C03546"></a-mixin>
+      </a-assets>
+
       <a-entity camera position="0 0 5"
                 controls="position: hmd-controls;
                           rotation: comfort-turn-keyboard-controls"></a-entity>
 
-      <a-entity geometry="primitive: box" material="color: #C03546"></a-entity>
+      <a-entity mixin="box" position="-3 0 0"></a-entity>
+      <a-entity mixin="box" position="3 0 0"></a-entity>
+      <a-entity mixin="box" position="0 0 -3"></a-entity>
+      <a-entity mixin="box" position="0 0 3"></a-entity>
+
+      <a-entity mixin="box" position="-3 0 8"></a-entity>
+      <a-entity mixin="box" position="3 0 8"></a-entity>
+      <a-entity mixin="box" position="0 0 -11"></a-entity>
+      <a-entity mixin="box" position="0 0 11"></a-entity>
+
+      <a-sky color="#ECECEC"></a-sky>
     </a-scene>
   </body>
 </html>
