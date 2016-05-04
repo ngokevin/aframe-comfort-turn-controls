@@ -17,7 +17,7 @@ var KEY_RIGHT = 39;
 
 AFRAME.registerControls('comfort-turn-gamepad-controls', {
   schema: {
-    degrees: {default: 30},
+    degrees: {default: 60},
     enabled: {default: true},
     controller: {default: 1, oneOf: [1, 2, 3, 4]}
   },
@@ -29,7 +29,6 @@ AFRAME.registerControls('comfort-turn-gamepad-controls', {
   init: function () {
     this.angle = undefined;
     this.gamepad = null;
-    this.rotation = this.el.getComputedAttribute('rotation');
   },
 
   /**
@@ -67,7 +66,7 @@ AFRAME.registerControls('comfort-turn-gamepad-controls', {
 
 AFRAME.registerControls('comfort-turn-keyboard-controls', {
   schema: {
-    degrees: {default: 30},
+    degrees: {default: 60},
     enabled: {default: true}
   },
 
@@ -78,9 +77,7 @@ AFRAME.registerControls('comfort-turn-keyboard-controls', {
   init: function () {
     this.angle = undefined;
     this.keysPressed = {};
-    this.onKeyDown = this.onKeyDown.bind(this);
     this.onKeyUp = this.onKeyUp.bind(this);
-    window.addEventListener('keydown', this.onKeyDown);
     window.addEventListener('keyup', this.onKeyUp);
   },
 
@@ -94,23 +91,11 @@ AFRAME.registerControls('comfort-turn-keyboard-controls', {
   },
 
   remove: function () {
-    window.removeEventListener('keydown', this.onKeyDown);
     window.removeEventListener('keyup', this.onKeyUp);
   },
 
-  onKeyDown: function (event) {
-    var rotation = this.el.getComputedAttribute('rotation');
-    this.keysPressed[event.keyCode] = true;
-    if (this.keysPressed[KEY_LEFT]) {
-      rotation.y += this.data.degrees;
-    } else if (this.keysPressed[KEY_RIGHT]) {
-      rotation.y -= this.data.degrees;
-    }
-    this.rotation = rotation;
-  },
-
   onKeyUp: function (event) {
-    delete this.keysPressed[event.keyCode];
+    this.keysPressed[event.keyCode] = true;
   },
 
   /**
@@ -123,7 +108,19 @@ AFRAME.registerControls('comfort-turn-keyboard-controls', {
     return keysPressed[KEY_LEFT] || keysPressed[KEY_RIGHT];
   },
 
-  getRotation: function () {
-    return this.rotation;
+  /**
+   * Returns an incremental THREE.Vector2 rotation change, with X and Y rotation values.
+   * To be calibrated, values should be on the range [-1,1].
+   * @returns {THREE.Vector2}
+   */
+  getRotationDelta: function () {
+    var keysPressed = this.keysPressed;
+    if (keysPressed[KEY_LEFT]) {
+      keysPressed[KEY_LEFT] = false;
+      return new THREE.Vector2(-1 * this.angle, 0);
+    } else if (keysPressed[KEY_RIGHT]) {
+      keysPressed[KEY_RIGHT] = false;
+      return new THREE.Vector2(this.angle, 0);
+    }
   }
 });
